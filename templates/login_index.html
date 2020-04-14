@@ -47,18 +47,8 @@
             return
         }
 
-        // 로그인정보에 일치하는 아이디, 비밀번호가 있는지 확인
-        if (login_info(user_id, user_pw)) {
-            // 로그인 성공 -> 페이지 이동 (세션 유지?)
-            location.replace('main_index.html')
-            return
-        }
-        else {
-            // 로그인 실패, 입력한 패스워드 삭제 + alert
-            $('#upw').empty();
-            alert('아이디, 비밀번호를 확인해주세요')
-            return
-        }
+        // 입력받은 정보와 DB를 비교하여 로그인 시도 (세션유지 추가필요!!)
+        login_info(user_id, user_pw)
     }
 
     // DB에 입력받은 {아이디 : 비밀번호}가 있는지 확인
@@ -69,7 +59,11 @@
             data: { 'uid_give': user_id, 'upw_give': user_pw },
             success: function (response) {
                 if (response['result'] == 'success') {
-                    alert(response['msg']);
+                    location.replace('/main')
+                }
+                else {
+                    $('#upw').empty();
+                    alert('아이디, 비밀번호를 확인해주세요');
                 }
             }
         });
@@ -77,7 +71,7 @@
 
     // (회원가입) 버튼 클릭 시 (회원가입 페이지)로 이동
     function member_btn() {
-        location.replace('member_index.html')
+        location.replace('/member')
     }
 
 </script>
@@ -89,39 +83,26 @@
             <h2 class="card-title text-center" style="color:#113366;">로그인</h2>
         </div>
         <div class="card-body">
-            <form class="form-signin" method="POST" onSubmit="logincall();return false">
+            <form class="form-signin">
                 <h5 class="form-signin-heading">아이디</h5>
                 <label for="inputEmail" class="sr-only">Your ID</label>
                 <input type="text" id="uid" class="form-control" placeholder="Your ID" required autofocus><BR>
                 <h5 class="form-signin-heading">비밀번호</h5>
                 <label for="inputPassword" class="sr-only">Password</label>
                 <input type="password" id="upw" class="form-control" placeholder="Password" required><br>
-                <div class="checkbox">
+                <!-- <div class="checkbox">
                     <label>
                         <input type="checkbox" value="remember-me"> 기억하기
                     </label>
-                </div>
-                <button onclick="login_btn()" id="btn-Yes" class="btn btn-lg btn-primary btn-block" type="submit">로그인
+                </div> -->
+                <button onclick="login_btn()" id="btn-login" class="btn btn-lg btn-primary btn-block">로그인
                 </button>
-                <button onclick="member_btn()" id="btn-member" class="btn btn-lg btn-block" type="submit">회원가입
+                <button onclick="member_btn()" id="btn-member" class="btn btn-lg btn-block">회원가입
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- <div class="modal">
-    </div> -->
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <!-- <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
-        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
-        crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
-        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
-        crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
-        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
-        crossorigin="anonymous"></script> -->
 </body>
 
 </html>

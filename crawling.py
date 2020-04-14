@@ -28,18 +28,18 @@ item_position = soup.select('#flea-market-wrap > article > a > div.article-info 
 item_price = soup.select('#flea-market-wrap > article > a > div.article-info > p.article-price')
 
 # items 리스트에 img, title, position, price 데이터를 key&value 형태로 저장
-items = []
-for item in zip(item_img, item_title, item_position, item_price):
-    items.append(
-        {
-            'img': item[0],
-            'title': item[1].text,
-            'position': item[2].text,
-            'price': item[3].text
-        }
-    )
 
-print(items)
+items_all = []
+for item in zip(item_img, item_title, item_position, item_price):
+    items = {}
+    items.update({'img': item[0].select_one('img')['src']})
+    items.update({'title': item[1].text})
+    items.update({'position': item[2].text})
+    items.update({'price': item[3].text})
+
+    items_all.append(items)
+
+print(items_all)
 
 # Chrome 브라우저 종료
 driver.close()

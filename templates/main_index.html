@@ -62,15 +62,20 @@
             listing();
         });
 
-        $.ajax({
-            type: "method",
-            url: "url",
-            data: "data",
-            dataType: "dataType",
-            success: function (response) {
-                
-            }
-        });
+        function crawling() {
+            $.ajax({
+                type: "POST",
+                url: "/main",
+                success: function (response) {
+                    if (response['result'] == 'success') {
+                        alert('크롤링 성공')
+                    }
+                    else {
+                        alert('크롤링 실패')
+                    }
+                }
+            });
+        }
 
     </script>
 </head>
@@ -84,8 +89,7 @@
             <p class="lea   d">
                 <a id="btn-posting-box" class="btn btn-primary btn-lg" onclick="openclose()" href="#"
                     role="button">포스팅박스 열기</a>
-                <a id="btn-posting-box" class="btn btn-primary btn-lg" onclick="removeall()" href="#"
-                    role="button">모두 삭제</a>
+                <a id="btn-posting-box" class="btn btn-primary btn-lg" onclick="crawling()" role="button">물품 크롤링</a>
             </p>
         </div>
         <div class="form-post" id="post-box">
