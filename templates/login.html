@@ -21,6 +21,7 @@
 
     <!-- JS -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
         integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
         crossorigin="anonymous"></script>
@@ -30,48 +31,42 @@
 </head>
 
 <script>
+    // [로그인] 버튼 클릭 시 입력된 정보가 DB에 있는지 확인
     function login_btn() {
-        // 화면상에 입력한 아이디, 비밀번호를 변수에 저장
         let user_id = $('#uid').val();
         let user_pw = $('#upw').val();
 
-        // 아이디, 비밀번호중 입력값이 없을경우 alert, focus
         if (user_id == "") {
-            alert("아이디를 입력해주세요")
-            $('#uid').focus()
+            alert('아이디를 입력해주세요.')
+            $('#uid').focus();
             return
         }
         else if (user_pw == "") {
-            alert("패스워드를 입력해주세요!")
-            $('#upw').focus()
+            alert('비밀번호를 입력해주세요.')
+            $('#upw').focus();
             return
         }
 
-        // 입력받은 정보와 DB를 비교하여 로그인 시도 (세션유지 추가필요!!)
-        login_info(user_id, user_pw)
-    }
-
-    // DB에 입력받은 {아이디 : 비밀번호}가 있는지 확인
-    function login_info(user_id, user_pw) {
         $.ajax({
             type: "POST",
-            url: "/login",
+            url: "/api/login",
             data: { 'uid_give': user_id, 'upw_give': user_pw },
             success: function (response) {
                 if (response['result'] == 'success') {
-                    location.replace('/main')
+                    $.cookie('mytoken', response['token']);
+                    alert('로그인 완료!')
+                    window.location.href = '/'
                 }
                 else {
-                    $('#upw').empty();
-                    alert('아이디, 비밀번호를 확인해주세요');
+                    alert(response['msg'])
                 }
             }
         });
     }
 
-    // (회원가입) 버튼 클릭 시 (회원가입 페이지)로 이동
+    // [회원가입] 버튼 클릭 시 회원가입 페이지로 이동
     function member_btn() {
-        location.replace('/member')
+        window.location.href = '/register'
     }
 
 </script>
@@ -85,10 +80,8 @@
         <div class="card-body">
             <form class="form-signin">
                 <h5 class="form-signin-heading">아이디</h5>
-                <label for="inputEmail" class="sr-only">Your ID</label>
-                <input type="text" id="uid" class="form-control" placeholder="Your ID" required autofocus><BR>
+                <input type="text" id="uid" class="form-control" placeholder="Your ID" required><BR>
                 <h5 class="form-signin-heading">비밀번호</h5>
-                <label for="inputPassword" class="sr-only">Password</label>
                 <input type="password" id="upw" class="form-control" placeholder="Password" required><br>
                 <!-- <div class="checkbox">
                     <label>

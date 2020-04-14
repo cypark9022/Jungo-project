@@ -21,6 +21,7 @@
 
     <!-- JS -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
         integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
         crossorigin="anonymous"></script>
@@ -30,61 +31,47 @@
 </head>
 
 <script>
-
-    // (확인 버튼) 클릭 시 DB에 회원정보 저장
+    // [확인] 버튼 클릭 시 DB에 회원정보 저장
     function confirm_btn() {
         let user_id = $('#uid').val();
         let user_pw = $('#upw').val();
         let user_name = $('#uname').val();
 
-        // 회원정보에 공백이 있을경우, alert + focus
         if (user_id == "") {
-            alert("아이디를 입력해주세요")
-            $('#uid').focus()
+            alert('아이디를 입력해주세요.')
+            $('#uid').focus();
             return
         }
         else if (user_pw == "") {
-            alert("패스워드를 입력해주세요")
-            $('#upw').focus()
+            alert('비밀번호를 입력해주세요.')
+            $('#upw').focus();
             return
         }
         else if (user_name == "") {
-            alert("이름을 입력해주세요")
-            $('#uname').focus()
+            alert('이름을 입력해주세요.')
+            $('#uname').focus();
             return
         }
 
-        // DB에 저장 (아이디 중복확인)
-        member_save(user_id, user_pw, user_name)
-    }
-
-
-    // DB에 회원정보(id, pw, name) 저장
-    function member_save(user_id, user_pw, user_name) {
         $.ajax({
             type: "POST",
-            url: "member/save",
+            url: "/api/register",
             data: { 'uid_give': user_id, 'upw_give': user_pw, 'uname_give': user_name },
             success: function (response) {
                 if (response['result'] == 'success') {
-                    alert('회원가입이 완료되었습니다.');
-                    location.replace('/')
+                    alert('회원가입이 완료되었습니다.')
+                    window.location.href = '/login'
                 }
-                else if (response['result'] == 'duplication') {
-                    alert('이미 사용중인 아이디 입니다.')
-                    return
-                }
-                else {
-                    alert('오류가 발생하였습니다.')
+                else if (response['result'] == 'fail') {
+                    alert(response['msg'])
                 }
             }
         });
     }
 
-    // (취소 버튼) 클릭 시 (로그인 페이지)로 이동
+    // [취소] 버튼 클릭 시 로그인 페이지로 이동
     function cancel_btn() {
-        window.location.href='/'
-        // location.replace('/')
+        window.location.href = '/login'
     }
 
 </script>
@@ -99,13 +86,10 @@
             <!-- <form class="form-signin" method="POST" onSubmit="logincall();return false"> -->
             <form class="form-signin">
                 <h5 class="form-signin-heading">아이디</h5>
-                <label for="inputEmail" class="sr-only">Your ID</label>
                 <input type="text" id="uid" class="form-control" placeholder="Your ID" required><BR>
                 <h5 class="form-signin-heading">비밀번호</h5>
-                <label for="inputPassword" class="sr-only">Password</label>
                 <input type="password" id="upw" class="form-control" placeholder="Password" required><br>
                 <h5 class="form-signin-heading">이름</h5>
-                <label for="inputPassword" class="sr-only">Name</label>
                 <input type="text" id="uname" class="form-control" placeholder="Name" required><br>
                 <button onclick="confirm_btn()" id="btn-confirm" class="btn btn-lg btn-primary btn-block">확인
                 </button>
