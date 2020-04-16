@@ -107,11 +107,10 @@ def api_valid():
 ##################################
 
 # 입력받은 키워드로 당근마켓 크롤링
-@app.route('/main', methods=['POST'])
-def crawling_a():
-    ## 프론트와 연결할때는 화면에서의 입력값(keyword)으로 수정해야함!!
-    keyword = '지갑'
-    url = 'https://www.daangn.com/search/' + keyword
+@app.route('/dgmk', methods=['POST'])
+def dgmk():
+    keyword_receive = request.form['keyword_give']
+    url = 'https://www.daangn.com/search/' + str(keyword_receive)
 
     chrome_path = 'C:/Users/LGPC/Desktop/sparta/Jungo-project/driver/chromedriver_v81/chromedriver_win32/chromedriver'
     driver = webdriver.Chrome(chrome_path)
@@ -119,46 +118,112 @@ def crawling_a():
     driver.implicitly_wait(3)
     driver.get(url)
 
-    # 크롬에서 특정tag영역(더보기) 클릭 -> 5회 반복
-    for i in range(5):
+    # 크롬 웹브라우저 화면에서 [더보기] 클릭 -> 12회 반복 (150개)
+    for i in range(12):
         driver.find_element_by_xpath('//*[@id="result"]/div[1]/div[2]').click()
+    time.sleep(5)
 
-    # 더보기 5번 클릭 후 url 페이지의 html data 크롤링
-    driver.implicitly_wait(3)
+    # url 페이지의 html data 크롤링
     html = driver.page_source
     soup = BeautifulSoup(html, 'html.parser')
 
-    item_img = soup.select('div.card-photo')
-    item_title = soup.select('span.article-title')
-    item_position = soup.select('p.article-region-name')
-    item_price = soup.select('p.article-price')
+    # 새로운 데이터를 저장하기위해 DB 테이블 초기화
+    db.items_dangn.remove({})
 
-    # 새로 크롤링한 데이터를 저장하기위해 DB 초기화
-    db.items.remove({})
-    driver.implicitly_wait(1)
+    # 입력받은 상한가, 하한가를 int형으로 변환
+    max_price_receive = request.form['max_price_give']
+    min_price_receive = request.form['min_price_give']
+    price_max = int("".join(filter(str.isdigit, max_price_receive)))
+    price_min = int("".join(filter(str.isdigit, min_price_receive)))
 
-    # items 딕셔너리에 img, title, position, price 데이터를 key&value 형태로 저장
-    for item in zip(item_img, item_title, item_position, item_price):
-        items = {}
-        items.update({'img': item[0].select_one('img')['src']})
-        items.update({'title': item[1].text})
-        items.update({'position': item[2].text})
-        items.update({'price': item[3].text})
+    # 크롤링된 데이터를 DB에 저장
+    items = soup.select('div > article.flea-market-article')
 
-        # 크롤링한 데이터 DB에 저장
-        db.items.insert_one(items)
-        time.sleep(0.3)
-        # items_all.append(items)
+    for item in items:
+        item_img = item.select_one('div.card-photo > img')['src']
+        item_title = item.select_one('span.article-title').text
+        item_position = item.select_one('p.article-region-name').text
+        item_price = item.select_one('p.article-price').text
+        item_link = item.select_one('article.flea-market-article > a')['href']
+
+        # 물품의 가격을 int형으로 변환
+        price_int = int("".join(filter(str.isdigit, item_price)))
+
+        if price_min <= price_int and price_int <= price_max:
+            doc = {
+                'img': item_img,
+                'title': item_title,
+                'position': item_position,
+                'price': item_price,
+                'link': 'daangn.com' + item_link
+                }
+            db.items_dangn.insert_one(doc)
 
     # Chrome 브라우저 종료
-    driver.implicitly_wait(1)
     driver.close()
 
     # DB에 데이터 저장이 될 경우, 크롤링성공 메시지출력
-    result = db.items.find({})
+    result = db.items_dangn.find({})
 
     if result is not None:
-        return jsonify({'result': 'success'})
+        return jsonify({'result': 'success', 'msg': '검색결과를 DB에 저장하였습니다'})
+    else:
+        return jsonify({'result': 'fail'})
+
+
+##################################
+##     헬로마켓 크롤링 API      ##
+##################################
+
+# 입력받은 키워드로 헬로마켓 크롤링
+@app.route('/hlmk', methods=['POST'])
+def hlmk():
+    keyword_receive = request.form['keyword_give']
+
+    # 입력받은 키워드로 최신(1~5page) html 가져오기
+    headers = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36'}
+    
+    # 새로운 데이터를 저장하기위해 DB 테이블 초기화
+    db.items_hello.remove({})
+
+    # 입력받은 상한가, 하한가를 int형으로 변환
+    max_price_receive = request.form['max_price_give']
+    min_price_receive = request.form['min_price_give']
+    price_max = int("".join(filter(str.isdigit, max_price_receive)))
+    price_min = int("".join(filter(str.isdigit, min_price_receive)))
+
+    for i in range(1, 6):
+        url = 'https://www.hellomarket.com/search?q=' + keyword_receive + '&page=' + str(i)
+        data = requests.get(url, headers=headers)
+
+        # 검색키워드로 크롤링하여 DB에 저장
+        soup = BeautifulSoup(data.text, 'html.parser')
+        items = soup.select('ul > li.main_col_3')
+
+        for item in items:
+            item_img = item.select_one('div.image_centerbox > img')['src']
+            item_title = item.select_one('div.item_title').text
+            item_price = item.select_one('div.item_price').text
+            item_link = item.select_one('li.main_col_3 > a')['href']
+
+            # 물품의 가격을 int형으로 변환
+            price_int = int("".join(filter(str.isdigit, item_price)))
+
+            if price_min <= price_int and price_int <= price_max:
+                doc = {
+                    'img': item_img,
+                    'title': item_title,
+                    'price': item_price,
+                    'link': 'hellomarket.com' + item_link
+                    }
+
+                db.items_hello.insert_one(doc)
+
+    # DB에 데이터 저장이 될 경우, 크롤링성공 메시지출력
+    result = db.items_hello.find({})
+
+    if result is not None:
+        return jsonify({'result': 'success', 'msg': '검색결과를 DB에 저장하였습니다'})
     else:
         return jsonify({'result': 'fail'})
 

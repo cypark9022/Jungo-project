@@ -2,3 +2,6 @@ driver/
 .idea/
 .gitattributes
 debug.log
+test.py
+crawling-hello.py
+crawling-dangn.py

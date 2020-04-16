@@ -53,6 +53,7 @@
             data: { 'uid_give': user_id, 'upw_give': user_pw },
             success: function (response) {
                 if (response['result'] == 'success') {
+                    console.log('login success')
                     $.cookie('mytoken', response['token']);
                     alert('로그인 완료!')
                     window.location.href = '/'
