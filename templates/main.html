@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Webpage Title -->
+    <title>Jungo</title>
+
+    <!-- Required meta tags -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="../static/css/main.css">
+
+    <!-- 구글폰트 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Dosis&display=swap|Pacifico&display=swap" rel="stylesheet">
+
+    <!-- JS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+</head>
+
+<script>
+    // mytoken 이라는 값으로 쿠키가 없으면, 로그인 창으로 이동시킴
+    $(document).ready(function () {
+        if ($.cookie('mytoken') == undefined) {
+            window.location.href = '/login'
+        }
+        else {
+            load_user_info()
+        }
+    });
+
+    // 쿠키에 가지고 있는 token을 헤더에 담아서 보냄
+    function load_user_info() {
+        $.ajax({
+            type: "GET",
+            url: "/api/uname",
+            headers: { 'token_give': $.cookie('mytoken') },
+            data: {},
+            success: function (response) {
+                if (response['result'] == 'success') {
+                    $('#uname').text(response['uname']);
+                }
+                else {
+                    alert(response['msg'])
+                    window.location.href = '/login'
+                }
+            }
+        });
+    }
+
+    // [로그아웃] 버튼 클릭 시 토큰을 쿠키에서 삭제
+    function logout() {
+        $.removeCookie('mytoken');
+        alert('로그아웃 합니다')
+        window.location.href = '/login'
+    }
+
+    // [검색] 버튼 클릭시 당근마켓, 헬로마켓 물품 크롤링
+    function searching() {
+        let keyword = $('#searching-keyword').val();
+        let max_price = $('#max-price').val();
+        let min_price = $('#min-price').val();
+
+        // 당근마켓 크롤링
+        dgmk_crawl(keyword, max_price, min_price)
+
+        // 헬로마켓 크롤링
+        hlmk_crawl(keyword, max_price, min_price)
+
+        // DB에 저장된 크롤링 data 화면에 출력
+        listing()
+
+    }
+
+    function dgmk_crawl(keyword, max_price, min_price) {
+        $.ajax({
+            type: "POST",
+            url: "/dgmk",
+            data: { 'keyword_give': keyword, 'max_price_give': max_price, 'min_price_give': min_price },
+            success: function (response) {
+                console.log(response)
+                if (response['result'] == 'success') {
+                    alert(response['msg'])
+                }
+                else {
+                    alert('크롤링 실패')
+                }
+            }
+        });
+    }
+
+    function hlmk_crawl(keyword, max_price, min_price) {
+        $.ajax({
+            type: "POST",
+            url: "/hlmk",
+            data: { 'keyword_give': keyword, 'max_price_give': max_price, 'min_price_give': min_price },
+            success: function (response) {
+                console.log(response)
+                if (response['result'] == 'success') {
+                    alert(response['msg'])
+                }
+                else {
+                    alert('크롤링 실패')
+                }
+            }
+        });
+    }
+
+    // DB에 저장된 크롤링 data를 화면에 출력
+    function listing() {
+        $.ajax({
+            type: "GET",
+            url: "/items",
+            data: {},
+            success: function (response) {
+                if (response['result'] == 'success') {
+                    let items_dangn = response['items_dangn']
+                    let items_hello = response['items_hello']
+                    // 정상일 때 데이터를 순서대로 화면에 출력
+                    for (let i = 0; i < items_dangn.length; i++) {
+                        let title = items_dangn[i]['title']
+                        let price = items_dangn[i]['price']
+                        let img = items_dangn[i]['img']
+                        let link = items_dangn[i]['link']
+                        let position = items_dangn[i]['position']
+                        make_card_dangn(title, price, img, link, position)
+                    }
+                    for (let i = 0; i < items_hello.length; i++) {
+                        let title = items_dangn[i]['title']
+                        let price = items_dangn[i]['price']
+                        let img = items_dangn[i]['img']
+                        let link = items_dangn[i]['link']
+                        make_card_hello(title, price, img, link)
+                    }
+                } else {
+                    alert('데이터를 받아오지 못했습니다');
+                }
+            }
+        });
+    }
+
+    // 당근마켓의 물품들을 화면에 출력
+    function make_card_dangn(title, price, img, link, position) {
+        let card_list = '<article id="a-1" class="articles-card">\
+                            <a href="' + link + '"><img src="' + img + '" class="article-photo"></a>\
+                            <h5>' + title + '</h5>\
+                            <strong>' + price + '</strong>\
+                            <p>' + position + '</p>\
+                        </article>';
+        $('#articles-bloc').append(card_list)
+    }
+
+    // 헬로마켓의 물품들을 화면에 출력
+    function make_card_hello(title, price, img, link) {
+        let card_list = '<article id="a-1" class="articles-card">\
+                            <a href="' + link + '"><img src="' + img + '" class="article-photo"></a>\
+                            <h5>' + title + '</h5>\
+                            <strong>' + price + '</strong>\
+                            <br>\
+                        </article>';
+        $('#articles-bloc').append(card_list)
+    }
+
+</script>
+
+<body>
+    <section id="main">
+        <header>
+            <div class="jumbotron jumbotron-fluid">
+                <div class="container">
+                    <!-- 제목 -->
+                    <h1 class="display-4">Jungo</h1>
+                    <a id="btn-posting-box" class="btn btn-primary btn-lg" onclick="logout()" role="button">로그아웃</a>
+                    <p class="lead" style="margin: 30px auto 30px;">당근마켓, 헬로마켓 등의 중고거래 사이트에서 상품을 검색합니다</p>
+                    <div class="input-group mb-3">
+                        <!-- 검색어 입력 -->
+                        <input id="searching-keyword" type="text" class="form-control" placeholder="어떤 상품을 찾으시나요?"
+                            aria-describedby="basic-addon2" style="margin: 0 auto 10px;">
+                        <div class="input-group-append">
+                            <button onclick="searching()" type="button" class="btn btn-primary"
+                                style="margin: 0 auto 10px;">검색</button>
+                        </div>
+                        <!-- 상한가, 하한가 -->
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"
+                                    style="background-color:chocolate; color:cornsilk;">최소가격</span>
+                            </div>
+                            <input id="min-price" type="text" class="form-control">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"
+                                    style="background-color:chocolate; color:cornsilk;">최대가격</span>
+                            </div>
+                            <input id="max-price" type="text" class="form-control">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 물품들을 카드형태로 -->
+        <section id="articles-bloc">
+
+            <!-- <article id="a-1" class="articles-card">
+                <a href="#"><img src="https://i.ibb.co/0rm0jLf/halloween.jpg" class="article-photo"
+                        alt="halloween cakes" /></a>
+                <h3>1{{item_title}}</h3>
+                <p>1{{item_price}}</p>
+                <p>1{{item_position}}</p>
+            </article>
+
+            <article id="a-1" class="articles-card">
+                <a href="#"><img src="https://i.ibb.co/cT1gHty/rollcake.jpg" class="article-photo"></a>
+                <h3>1{{item_title}}</h3>
+                <p>1{{item_price}}</p>
+                <p>1{{item_position}}</p>
+            </article>
+
+            <article id="a-1" class="articles-card">
+                <a href="#"><img src="https://i.ibb.co/hR524JK/petitchaperonrouge.jpg" class="article-photo"
+                        alt="cute cakes /"></a>
+                <h3>1{{item_title}}</h3>
+                <p>1{{item_price}}</p>
+                <p>1{{item_position}}</p>
+            </article>
+
+            <article id="a-1" class="articles-card article4">
+                <a href="#"><img src="https://i.ibb.co/JsVn3CK/matcha-rollcake.jpg" class="article-photo"
+                        alt="matcha rollcake" /></a>
+                <h3>1{{item_title}}</h3>
+                <p>1{{item_price}}</p>
+                <p>1{{item_position}}</p>
+            </article>
+
+            <article id="a-1" class="articles-card article5">
+                <a href="#"><img src="https://i.ibb.co/bFmmnVj/melonpan.jpg" class="article-photo"
+                        alt="melon pan" /></a>
+                <h3>1{{item_title}}</h3>
+                <p>1{{item_price}}</p>
+                <p>1{{item_position}}</p>
+            </article>
+
+            <article id="a-1" class="articles-card article6">
+                <a href="#"><img src="https://i.ibb.co/FB4DbZw/princess-cake.jpg" class="article-photo"
+                        alt="princess cake" /></a>
+                <h3>1{{item_title}}</h3>
+                <p>1{{item_price}}</p>
+                <p>1{{item_position}}</p>
+            </article> -->
+
+        </section>
+
+    </section>
+</body>
+
+</html>

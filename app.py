@@ -20,7 +20,7 @@ from selenium import webdriver  # 동적인 페이지 크롤링
 ###################################
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return render_template('main.html')
 
 @app.route('/login')
 def member_page():
@@ -74,7 +74,7 @@ def login():
         # payload에 아이디와 만료기간 정보 담기
         payload = {
             'uid': uid_receive,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=60)
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=180)
         }
         # 시크릿키를 알아야 payload 정보를 볼 수 있는 jwt 토큰 생성
         token = jwt.encode(payload, SECRET_KEY, algorithm='HS256').decode('utf-8')
@@ -120,7 +120,8 @@ def dgmk():
 
     # 크롬 웹브라우저 화면에서 [더보기] 클릭 -> 12회 반복 (150개)
     for i in range(12):
-        driver.find_element_by_xpath('//*[@id="result"]/div[1]/div[2]').click()
+        driver.find_element_by_css_selector('#result > div:nth-child(1) > div.more-btn').click()
+        # driver.find_element_by_xpath('//*[@id="result"]/div[1]/div[2]').click()
     time.sleep(5)
 
     # url 페이지의 html data 크롤링
@@ -226,6 +227,20 @@ def hlmk():
         return jsonify({'result': 'success', 'msg': '검색결과를 DB에 저장하였습니다'})
     else:
         return jsonify({'result': 'fail'})
+
+
+####################################
+##      DB데이터 화면에 출력      ##
+####################################
+
+@app.route('/items', methods=['GET'])
+def make_card():
+    # 모든 items의 데이터 가져온 후 list로 변환
+    items_dangn = list(db.items_dangn.find({},{'_id': 0}))
+    items_hello = list(db.items_hello.find({},{'_id': 0}))
+
+    return jsonify({'result': 'success', 'items_dangn': items_dangn, 'items_hello': items_hello})
+
 
 # API 서버 실행 (url, Port)
 if __name__ == '__main__':
