@@ -72,62 +72,19 @@
         let max_price = $('#max-price').val();
         let min_price = $('#min-price').val();
 
-        // 당근마켓 크롤링
-        dgmk_crawl(keyword, max_price, min_price)
+        $('#articles-bloc').empty();
 
-        // 헬로마켓 크롤링
-        hlmk_crawl(keyword, max_price, min_price)
-
-        // DB에 저장된 크롤링 data 화면에 출력
-        listing()
-
-    }
-
-    function dgmk_crawl(keyword, max_price, min_price) {
         $.ajax({
             type: "POST",
-            url: "/dgmk",
+            url: "/searching",
             data: { 'keyword_give': keyword, 'max_price_give': max_price, 'min_price_give': min_price },
             success: function (response) {
-                console.log(response)
-                if (response['result'] == 'success') {
-                    alert(response['msg'])
-                }
-                else {
-                    alert('크롤링 실패')
-                }
-            }
-        });
-    }
-
-    function hlmk_crawl(keyword, max_price, min_price) {
-        $.ajax({
-            type: "POST",
-            url: "/hlmk",
-            data: { 'keyword_give': keyword, 'max_price_give': max_price, 'min_price_give': min_price },
-            success: function (response) {
-                console.log(response)
-                if (response['result'] == 'success') {
-                    alert(response['msg'])
-                }
-                else {
-                    alert('크롤링 실패')
-                }
-            }
-        });
-    }
-
-    // DB에 저장된 크롤링 data를 화면에 출력
-    function listing() {
-        $.ajax({
-            type: "GET",
-            url: "/items",
-            data: {},
-            success: function (response) {
+                console.log('크롤링 결과를 화면에 출력합니다')
+                // 정상일 때 데이터를 순서대로 화면에 출력
                 if (response['result'] == 'success') {
                     let items_dangn = response['items_dangn']
                     let items_hello = response['items_hello']
-                    // 정상일 때 데이터를 순서대로 화면에 출력
+                    console.log('크롤링 성공')
                     for (let i = 0; i < items_dangn.length; i++) {
                         let title = items_dangn[i]['title']
                         let price = items_dangn[i]['price']
@@ -143,8 +100,10 @@
                         let link = items_dangn[i]['link']
                         make_card_hello(title, price, img, link)
                     }
-                } else {
-                    alert('데이터를 받아오지 못했습니다');
+                }
+                else {
+                    alert('데이터를 받아오지 못했습니다.')
+                    console.log('데이터를 받아오지 못했습니다.')
                 }
             }
         });
@@ -153,7 +112,7 @@
     // 당근마켓의 물품들을 화면에 출력
     function make_card_dangn(title, price, img, link, position) {
         let card_list = '<article id="a-1" class="articles-card">\
-                            <a href="' + link + '"><img src="' + img + '" class="article-photo"></a>\
+                            <a href="http://' + link + '" target="_blank"><img src="' + img + '" class="article-photo"></a>\
                             <h5>' + title + '</h5>\
                             <strong>' + price + '</strong>\
                             <p>' + position + '</p>\
@@ -164,7 +123,7 @@
     // 헬로마켓의 물품들을 화면에 출력
     function make_card_hello(title, price, img, link) {
         let card_list = '<article id="a-1" class="articles-card">\
-                            <a href="' + link + '"><img src="' + img + '" class="article-photo"></a>\
+                            <a href="http://' + link + '" target="_blank"><img src="' + img + '" class="article-photo"></a>\
                             <h5>' + title + '</h5>\
                             <strong>' + price + '</strong>\
                             <br>\
@@ -209,51 +168,12 @@
             </div>
         </header>
 
-        <!-- 물품들을 카드형태로 -->
+        <!-- 물품들을 카드형태로 화면에 출력 -->
         <section id="articles-bloc">
 
             <!-- <article id="a-1" class="articles-card">
                 <a href="#"><img src="https://i.ibb.co/0rm0jLf/halloween.jpg" class="article-photo"
                         alt="halloween cakes" /></a>
-                <h3>1{{item_title}}</h3>
-                <p>1{{item_price}}</p>
-                <p>1{{item_position}}</p>
-            </article>
-
-            <article id="a-1" class="articles-card">
-                <a href="#"><img src="https://i.ibb.co/cT1gHty/rollcake.jpg" class="article-photo"></a>
-                <h3>1{{item_title}}</h3>
-                <p>1{{item_price}}</p>
-                <p>1{{item_position}}</p>
-            </article>
-
-            <article id="a-1" class="articles-card">
-                <a href="#"><img src="https://i.ibb.co/hR524JK/petitchaperonrouge.jpg" class="article-photo"
-                        alt="cute cakes /"></a>
-                <h3>1{{item_title}}</h3>
-                <p>1{{item_price}}</p>
-                <p>1{{item_position}}</p>
-            </article>
-
-            <article id="a-1" class="articles-card article4">
-                <a href="#"><img src="https://i.ibb.co/JsVn3CK/matcha-rollcake.jpg" class="article-photo"
-                        alt="matcha rollcake" /></a>
-                <h3>1{{item_title}}</h3>
-                <p>1{{item_price}}</p>
-                <p>1{{item_position}}</p>
-            </article>
-
-            <article id="a-1" class="articles-card article5">
-                <a href="#"><img src="https://i.ibb.co/bFmmnVj/melonpan.jpg" class="article-photo"
-                        alt="melon pan" /></a>
-                <h3>1{{item_title}}</h3>
-                <p>1{{item_price}}</p>
-                <p>1{{item_position}}</p>
-            </article>
-
-            <article id="a-1" class="articles-card article6">
-                <a href="#"><img src="https://i.ibb.co/FB4DbZw/princess-cake.jpg" class="article-photo"
-                        alt="princess cake" /></a>
                 <h3>1{{item_title}}</h3>
                 <p>1{{item_price}}</p>
                 <p>1{{item_position}}</p>

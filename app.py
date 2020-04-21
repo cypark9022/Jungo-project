@@ -14,6 +14,8 @@ SECRET_KEY = 'cypark'   # jwt 토큰 생성을위한 고유키(비밀키)
 import requests
 from bs4 import BeautifulSoup   # html 파싱
 from selenium import webdriver  # 동적인 페이지 크롤링
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
 
 ###################################
 ##       HTML을 주는 부분        ##
@@ -107,35 +109,41 @@ def api_valid():
 ##################################
 
 # 입력받은 키워드로 당근마켓 크롤링
-@app.route('/dgmk', methods=['POST'])
-def dgmk():
-    keyword_receive = request.form['keyword_give']
-    url = 'https://www.daangn.com/search/' + str(keyword_receive)
+# @app.route('/dgmk', methods=['POST'])
+def dgmk(keyword, max_price, min_price):
+    url = 'https://www.daangn.com/search/' + keyword
 
     chrome_path = 'C:/Users/LGPC/Desktop/sparta/Jungo-project/driver/chromedriver_v81/chromedriver_win32/chromedriver'
-    driver = webdriver.Chrome(chrome_path)
 
+    # chrome 브라우저를 headless(non-gui)로 사용하기위한 옵션설정
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    driver = webdriver.Chrome(options=options, executable_path=chrome_path)
     driver.implicitly_wait(3)
+
     driver.get(url)
+    driver.implicitly_wait(1)
 
     # 크롬 웹브라우저 화면에서 [더보기] 클릭 -> 12회 반복 (150개)
     for i in range(12):
-        driver.find_element_by_css_selector('#result > div:nth-child(1) > div.more-btn').click()
-        # driver.find_element_by_xpath('//*[@id="result"]/div[1]/div[2]').click()
-    time.sleep(5)
+        try:
+            driver.find_element_by_xpath('//*[@id="result"]/div[1]/div[2]').click()
+            driver.implicitly_wait(1)
+            driver.find_element_by_tag_name('body').send_keys(Keys.PAGE_DOWN)
+            time.sleep(0.5)
+        # [더보기] 버튼이 없을경우, 현재페이지를 크롤링
+        except:
+            print('No dangn-market more-button')
+            time.sleep(1)
+            break
 
     # url 페이지의 html data 크롤링
     html = driver.page_source
     soup = BeautifulSoup(html, 'html.parser')
 
-    # 새로운 데이터를 저장하기위해 DB 테이블 초기화
-    db.items_dangn.remove({})
-
-    # 입력받은 상한가, 하한가를 int형으로 변환
-    max_price_receive = request.form['max_price_give']
-    min_price_receive = request.form['min_price_give']
-    price_max = int("".join(filter(str.isdigit, max_price_receive)))
-    price_min = int("".join(filter(str.isdigit, min_price_receive)))
+    # 새로운 데이터를 저장하기위해 DB 테이블 삭제
+    db.items_dangn.remove({'keyword': keyword})
 
     # 크롤링된 데이터를 DB에 저장
     items = soup.select('div > article.flea-market-article')
@@ -147,11 +155,26 @@ def dgmk():
         item_price = item.select_one('p.article-price').text
         item_link = item.select_one('article.flea-market-article > a')['href']
 
-        # 물품의 가격을 int형으로 변환
-        price_int = int("".join(filter(str.isdigit, item_price)))
-
-        if price_min <= price_int and price_int <= price_max:
+        # 물품의 가격을 int형으로 변환 (가격정보 없으면 pass)
+        price_int = "".join(filter(str.isdigit, item_price))
+        if price_int == '':
+            continue
+        
+        # 최대가격 입력 안했을 경우, 최소가격만 비교하여 저장
+        if min_price <= int(price_int) and max_price == -1:
             doc = {
+                'keyword': keyword,
+                'img': item_img,
+                'title': item_title,
+                'position': item_position,
+                'price': item_price,
+                'link': 'daangn.com' + item_link
+                }
+            db.items_dangn.insert_one(doc)
+
+        elif min_price <= int(price_int) and int(price_int) <= max_price:
+            doc = {
+                'keyword': keyword,
                 'img': item_img,
                 'title': item_title,
                 'position': item_position,
@@ -164,12 +187,12 @@ def dgmk():
     driver.close()
 
     # DB에 데이터 저장이 될 경우, 크롤링성공 메시지출력
-    result = db.items_dangn.find({})
+    result = db.items_dangn.find({'keyword': keyword})
 
     if result is not None:
-        return jsonify({'result': 'success', 'msg': '검색결과를 DB에 저장하였습니다'})
+        print('Dangn-market crawling success!! (save to DB)')
     else:
-        return jsonify({'result': 'fail'})
+        print('ERROR!! Dangn-market crawling Fail...')
 
 
 ##################################
@@ -177,24 +200,15 @@ def dgmk():
 ##################################
 
 # 입력받은 키워드로 헬로마켓 크롤링
-@app.route('/hlmk', methods=['POST'])
-def hlmk():
-    keyword_receive = request.form['keyword_give']
-
-    # 입력받은 키워드로 최신(1~5page) html 가져오기
+def hlmk(keyword, max_price, min_price):
     headers = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36'}
     
-    # 새로운 데이터를 저장하기위해 DB 테이블 초기화
-    db.items_hello.remove({})
+    # 새로운 데이터를 저장하기위해 DB 테이블 삭제
+    db.items_hello.remove({'keyword': keyword})
 
-    # 입력받은 상한가, 하한가를 int형으로 변환
-    max_price_receive = request.form['max_price_give']
-    min_price_receive = request.form['min_price_give']
-    price_max = int("".join(filter(str.isdigit, max_price_receive)))
-    price_min = int("".join(filter(str.isdigit, min_price_receive)))
-
+    # 입력받은 키워드로 최신(1~5page) html 가져오기
     for i in range(1, 6):
-        url = 'https://www.hellomarket.com/search?q=' + keyword_receive + '&page=' + str(i)
+        url = 'https://www.hellomarket.com/search?q=' + keyword + '&page=' + str(i)
         data = requests.get(url, headers=headers)
 
         # 검색키워드로 크롤링하여 DB에 저장
@@ -207,37 +221,70 @@ def hlmk():
             item_price = item.select_one('div.item_price').text
             item_link = item.select_one('li.main_col_3 > a')['href']
 
-            # 물품의 가격을 int형으로 변환
-            price_int = int("".join(filter(str.isdigit, item_price)))
+            # 물품의 가격을 int형으로 변환 (가격정보 없으면 pass)
+            price_int = "".join(filter(str.isdigit, item_price))
+            if price_int == '':
+                continue
 
-            if price_min <= price_int and price_int <= price_max:
+            # 최대가격 입력 안했을 경우, 최소가격만 비교하여 저장
+            if min_price <= int(price_int) and max_price == -1:
                 doc = {
+                    'keyword': keyword,
                     'img': item_img,
                     'title': item_title,
                     'price': item_price,
                     'link': 'hellomarket.com' + item_link
                     }
+                db.items_hello.insert_one(doc)
 
+            elif min_price <= int(price_int) and int(price_int) <= max_price:
+                doc = {
+                    'keyword': keyword,
+                    'img': item_img,
+                    'title': item_title,
+                    'price': item_price,
+                    'link': 'hellomarket.com' + item_link
+                    }
                 db.items_hello.insert_one(doc)
 
     # DB에 데이터 저장이 될 경우, 크롤링성공 메시지출력
-    result = db.items_hello.find({})
+    result = db.items_hello.find({'keyword': keyword})
 
     if result is not None:
-        return jsonify({'result': 'success', 'msg': '검색결과를 DB에 저장하였습니다'})
+        print('Hello-market crawling success!! (save to DB)')
     else:
-        return jsonify({'result': 'fail'})
+        print('ERROR!! Hello-market crawling fail...')
 
 
 ####################################
 ##      DB데이터 화면에 출력      ##
 ####################################
 
-@app.route('/items', methods=['GET'])
+@app.route('/searching', methods=['POST'])
 def make_card():
+    keyword = request.form['keyword_give']
+    max_price_receive = request.form['max_price_give']
+    min_price_receive = request.form['min_price_give']
+
+    # 최대/최소가격 입력이 없을경우 -1 / 0 저장 (int형 변환)
+    temp_max = "".join(filter(str.isdigit, max_price_receive))
+    temp_min = "".join(filter(str.isdigit, min_price_receive))
+    
+    if temp_max == '':
+        max_price = -1
+    elif temp_min == '':
+        min_price = 0
+    else:
+        max_price = int(temp_max)
+        min_price = int(temp_min)
+
+    # 키워드로 당근마켓, 헬로마켓 크롤링
+    dgmk(keyword, max_price, min_price)
+    hlmk(keyword, max_price, min_price)
+
     # 모든 items의 데이터 가져온 후 list로 변환
-    items_dangn = list(db.items_dangn.find({},{'_id': 0}))
-    items_hello = list(db.items_hello.find({},{'_id': 0}))
+    items_dangn = list(db.items_dangn.find({'keyword': keyword},{'_id': 0}))
+    items_hello = list(db.items_hello.find({'keyword': keyword},{'_id': 0}))
 
     return jsonify({'result': 'success', 'items_dangn': items_dangn, 'items_hello': items_hello})
 
