@@ -4,6 +4,7 @@ body {
     width: 100%;
     height: 100%;
     background-color: #041221;
+    /* background-color: whitesmoke; */
     /* font-family: 'Dosis', sans-serif; */
     font-family: 'Noto Sans KR', sans-serif;
 }
@@ -12,7 +13,6 @@ body {
     box-sizing: border-box;
     width: 1000px;
     margin: auto;
-
 }
 
 header {
@@ -100,8 +100,25 @@ header {
     border-radius: 0.3rem;
     border: solid;
     display: block;
+    background-color: whitesmoke;
 }
 
 #post-box {
     display: none;
+}
+
+.lead-one {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: auto auto 50px;
+}
+
+#btn-posting-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: auto auto 50px;
 }

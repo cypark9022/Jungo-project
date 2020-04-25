@@ -9,3 +9,4 @@ sample.html
 mail.py
 schedule.py
 test.html
+__pycache__

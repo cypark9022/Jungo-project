@@ -58,9 +58,11 @@
             headers: { 'token_give': $.cookie('mytoken') },
             data: {},
             success: function (response) {
+                $('body').show();
                 if (response['result'] == 'success') {
-                    $('#uname').text(response['uname']);
-                    $('body').show();
+                    let uname = response['uname']
+                    $('#uname').text(uname);
+                    final_search(uname)
                 }
                 else {
                     alert(response['msg'])
@@ -77,40 +79,61 @@
         window.location.href = '/login'
     }
 
+    // 로그인중인 ID로 마지막에 검색했던 결과를 화면에 보여줌
+    function final_search(uname) {
+        $.ajax({
+            type: "POST",
+            url: "/final/search",
+            data: { 'uname': uname },
+            success: function (response) {
+                $('#articles-bloc').empty();
+                console.log('최근 검색결과를 불러옵니다.')
+                if (response['result'] == 'success') {
+                    let items = response['items']
+                    console.log('불러오기 성공')
+                    for (let i = 0; i < items.length; i++) {
+                        let price = items[i]['price']
+                        let title = items[i]['title']
+                        let img = items[i]['img']
+                        let link = items[i]['link']
+                        let position = items[i]['position']
+                        make_card(title, price, img, link, position)
+                    }
+                }
+                else {
+                    console.log('최근 검색결과가 없습니다.')
+                }
+            }
+        });
+    }
+
     // [검색] 버튼 클릭시 당근마켓, 헬로마켓 물품 크롤링
     function searching() {
         let keyword = $('#searching-keyword').val();
+        let user_name = $('#uname').text();
 
-        console.log('검색을 시작합니다')
+        console.log(user_name)
         $('#loading-bar').show();
 
         $.ajax({
             type: "POST",
             url: "/searching",
-            data: { 'keyword_give': keyword },
+            data: { 'keyword_give': keyword, 'uname': user_name },
             success: function (response) {
                 console.log('크롤링 결과를 화면에 출력합니다')
                 $('#articles-bloc').empty();
                 $('#loading-bar').hide();
                 // 정상일 때 데이터를 순서대로 화면에 출력
                 if (response['result'] == 'success') {
-                    let items_dangn = response['items_dangn']
-                    let items_hello = response['items_hello']
+                    let items = response['items']
                     console.log('크롤링 성공')
-                    for (let i = 0; i < items_dangn.length; i++) {
-                        let title = items_dangn[i]['title']
-                        let price = items_dangn[i]['price']
-                        let img = items_dangn[i]['img']
-                        let link = items_dangn[i]['link']
-                        let position = items_dangn[i]['position']
-                        make_card_dangn(title, price, img, link, position)
-                    }
-                    for (let i = 0; i < items_hello.length; i++) {
-                        let title = items_dangn[i]['title']
-                        let price = items_dangn[i]['price']
-                        let img = items_dangn[i]['img']
-                        let link = items_dangn[i]['link']
-                        make_card_hello(title, price, img, link)
+                    for (let i = 0; i < items.length; i++) {
+                        let title = items[i]['title']
+                        let price = items[i]['price']
+                        let img = items[i]['img']
+                        let link = items[i]['link']
+                        let position = items[i]['position']
+                        make_card(title, price, img, link, position)
                     }
                 }
                 else {
@@ -128,6 +151,7 @@
         let max_price = $('#filter-max').val();
         let min_price = $('#filter-min').val();
         let position = $('#filter-position').val();
+        let user_name = $('#uname').text();
 
         console.log('필터링을 시작합니다.')
         $('#loading-bar').show();
@@ -135,30 +159,22 @@
         $.ajax({
             type: "POST",
             url: "/api/filter",
-            data: { 'keyword_give': keyword, 'max_price_give': max_price, 'min_price_give': min_price, 'position_give': position },
+            data: { 'keyword_give': keyword, 'max_price_give': max_price, 'min_price_give': min_price, 'position_give': position, 'uname': user_name },
             success: function (response) {
                 console.log('필터링 결과를 화면에 출력합니다')
                 $('#articles-bloc').empty();
                 $('#loading-bar').hide();
                 // 정상일 때 데이터를 순서대로 화면에 출력
                 if (response['result'] == 'success') {
-                    let items_dangn = response['items_dangn']
-                    let items_hello = response['items_hello']
+                    let items = response['items']
                     console.log('필터링 성공')
-                    for (let i = 0; i < items_dangn.length; i++) {
-                        let title = items_dangn[i]['title']
-                        let price = items_dangn[i]['price']
-                        let img = items_dangn[i]['img']
-                        let link = items_dangn[i]['link']
-                        let position = items_dangn[i]['position']
-                        make_card_dangn(title, price, img, link, position)
-                    }
-                    for (let i = 0; i < items_hello.length; i++) {
-                        let title = items_dangn[i]['title']
-                        let price = items_dangn[i]['price']
-                        let img = items_dangn[i]['img']
-                        let link = items_dangn[i]['link']
-                        make_card_hello(title, price, img, link)
+                    for (let i = 0; i < items.length; i++) {
+                        let title = items[i]['title']
+                        let price = items[i]['price']
+                        let img = items[i]['img']
+                        let link = items[i]['link']
+                        let position = items[i]['position']
+                        make_card(title, price, img, link, position)
                     }
                 }
                 else {
@@ -169,24 +185,13 @@
         });
     }
 
-    // 당근마켓의 물품들을 화면에 출력
-    function make_card_dangn(title, price, img, link, position) {
+    // 검색한(크롤링한) 상품들을 화면에 출력
+    function make_card(title, price, img, link, position) {
         let card_list = '<article id="a-1" class="articles-card">\
                             <a href="http://' + link + '" target="_blank"><img src="' + img + '" class="article-photo"></a>\
                             <h5>' + title + '</h5>\
                             <strong>' + price + '</strong>\
                             <p>' + position + '</p>\
-                        </article>';
-        $('#articles-bloc').append(card_list)
-    }
-
-    // 헬로마켓의 물품들을 화면에 출력
-    function make_card_hello(title, price, img, link) {
-        let card_list = '<article id="a-1" class="articles-card">\
-                            <a href="http://' + link + '" target="_blank"><img src="' + img + '" class="article-photo"></a>\
-                            <h5>' + title + '</h5>\
-                            <strong>' + price + '</strong>\
-                            <br>\
                         </article>';
         $('#articles-bloc').append(card_list)
     }
@@ -197,12 +202,37 @@
         let max_price = $('#modal-max').val();
         let min_price = $('#modal-min').val();
         let you_mail = $('#modal-mail').val();
-        // you_mail에 정상적인 메일주소가 입력되었는지 정규식으로 확인해야함
+        let user_name = $('#uname').text();
+
+        if (keyword == "") {
+            alert('검색할 상품을 입력하세요.')
+            $('#modal-keyword').focus();
+            return
+        }
+        else if (min_price == "") {
+            alert('최소가격을 입력해주세요.')
+            $('#modal-min').focus();
+            return
+        }
+        else if (max_price == "") {
+            alert('최대가격을 입력해주세요.')
+            $('#modal-max').focus();
+            return
+        }
+        // you_mail에 정상적인 메일주소가 입력되었는지 정규식으로 확인해야함 ##
+        else if (you_mail == "") {
+            alert('메일주소를 입력해주세요.')
+            $('#uname').focus();
+            return
+        }
+        
+        console.log('메일 예약 실행')
+        alert('메일 예약이 실행되었습니다.')
 
         $.ajax({
             type: "POST",
             url: "/api/mail",
-            data: { 'keyword_give': keyword, 'max_price_give': max_price, 'min_price_give': min_price, 'you_give': you_mail },
+            data: { 'keyword_give': keyword, 'max_price_give': max_price, 'min_price_give': min_price, 'you_give': you_mail, 'uname': user_name },
             success: function (response) {
                 console.log('메일 예약이 (매시간 정각) 실행되었습니다.')
                 alert('메일 예약이 (매시간 정각) 실행되었습니다')
@@ -235,13 +265,12 @@
 
 <body>
     <section id="main">
-        <!-- <header> -->
         <!-- navbar 영역 (dropdown) -->
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark rounded">
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
-                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> Menu </a>
+                    <a class="nav-link dropdown-toggle" href="#" id="uname" role="button" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">Menu</a>
                     <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                         <a id="logoutBtn" class="dropdown-item btn">로그아웃</a>
                         <a id="reserveBtn" class="dropdown-item btn">메일예약</a>
@@ -255,8 +284,9 @@
                 <!-- 제목 -->
                 <h1 class="display-4">Jungo</h1>
                 <p class="lead" style="margin: 30px auto 8px;">[당근마켓] [헬로마켓] 등의 중고거래 사이트에서 상품을 검색합니다.</p>
-                <p class="lead" style="margin: 8px auto 8px;">[Menu]를 통해 메일예약 기능을 이용할 수 있습니다.</p>
-                <p class="lead" style="margin: 8px auto 30px;">[필터링 설정]을 통해 원하는 가격, 지역의 물품을 검색할 수 있습니다.</p>
+                <p class="lead" style="margin: 8px auto 8px;">[로그인ID]를 통해 메일예약 기능을 이용할 수 있습니다.</p>
+                <p class="lead" style="margin: 8px auto 8px;">[초기화면]에는 마지막에 검색한 상품을 보여줍니다.</p>
+                <p class="lead" style="margin: 8px auto 30px;">[필터링 설정]을 통해 원하는 가격, 지역의 상품을 검색할 수 있습니다.</p>
                 <hr class="my-4">
 
                 <!-- 검색어 입력 -->
@@ -271,9 +301,9 @@
                 </div>
 
                 <!-- 필터링 적용 (상한가, 하한가, 지역)-->
-                <p class="lead">
-                    <button id="btn-posting-box" onclick="openclose()" type="button"
-                        class="btn btn-primary">필터링설정</button>
+                <p class="lead-one">
+                    <button id="btn-posting-box" onclick="openclose()" type="button" class="btn btn-primary center-block">필터링설정
+                        열기</button>
                 </p>
             </div>
         </div>
@@ -281,11 +311,11 @@
         <div class="form-post" id="post-box">
             <div class="form-group">
                 <label for="exampleFormControlInput1">최소가격</label>
-                <input id="filter-min" class="form-control" placeholder="Only Number">
+                <input id="filter-min" class="form-control" placeholder="">
             </div>
             <div class="form-group">
                 <label for="exampleFormControlInput1">최대가격</label>
-                <input id="filter-max" class="form-control" placeholder="Only Number">
+                <input id="filter-max" class="form-control" placeholder="">
             </div>
             <div class="form-group">
                 <label class="modal-label" for="exampleFormControlInput1">지역</label>
@@ -307,9 +337,6 @@
             <button onclick="filter()" type="button" class="btn btn-primary">필터링검색</button>
         </div>
 
-
-        <!-- </header> -->
-
         <!-- [검색]버튼 클릭시 Ajax 통신을 할 동안 로딩중 이미지를 보여줌 -->
         <div id="loading-bar">
             <img id="loading-image" src="../static/image/loading-circle.jpg" alt="Loading..." />
@@ -317,12 +344,7 @@
 
         <!-- 물품들을 카드형태로 화면에 출력 -->
         <section id="articles-bloc">
-            <!-- <article id="a-1" class="articles-card">
-                <a href="#"><img src="https://i.ibb.co/0rm0jLf/halloween.jpg" class="article-photo"
-                        alt="halloween cakes" /></a>
-                <h3>1{{item_title}}</h3>
-                <p>1{{item_price}}</p>
-            </article> -->
+            
         </section>
 
     </section>
@@ -344,15 +366,15 @@
                 <div class="modal-body">
                     <div class="form-group" style="margin: 20px 30px auto 30px;">
                         <label class="modal-label" for="exampleFormControlInput1">검색할 상품</label>
-                        <input id="modal-keyword" class="form-control" placeholder="ex) MTB자전거">
+                        <input id="modal-keyword" class="form-control" placeholder="">
                     </div>
                     <div class="form-group" style="margin: 20px 30px auto 30px;">
                         <label class="modal-label" for="exampleFormControlInput1">최소가격(하한가)</label>
-                        <input id="modal-min" class="form-control" placeholder="ex) 0">
+                        <input id="modal-min" class="form-control" placeholder="Only Number">
                     </div>
                     <div class="form-group" style="margin: auto 30px auto 30px;">
                         <label class="modal-label" for="exampleFormControlInput1">최대가격(상한가)</label>
-                        <input id="modal-max" class="form-control" placeholder="ex) 100000">
+                        <input id="modal-max" class="form-control" placeholder="Only Number">
                     </div>
                     <div class="form-group" style="margin: auto 30px auto 30px;">
                         <label class="modal-label" for="exampleFormControlInput1">지역</label>
@@ -378,7 +400,7 @@
                 </div>
 
                 <div class="modal-footer">
-                    <a onclick="mailsent()" class="btn btn-primary" type="button" style="color: azure;">예약</a>
+                    <a onclick="mailsent()" class="btn btn-primary" type="button" data-dismiss="modal" style="color: azure;">예약</a>
                     <button class="btn" type="button" data-dismiss="modal">취소</button>
                 </div>
 
