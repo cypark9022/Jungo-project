@@ -1,18 +1,13 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
 <head>
     <!-- Webpage Title -->
-    <title>Jungo 로그인</title>
+    <title>Jungo Login</title>
 
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-
-    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-    <meta name="description" content="">
-    <meta name="author" content="">
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
@@ -31,72 +26,143 @@
 </head>
 
 <script>
-    // [로그인] 버튼 클릭 시 입력된 정보가 DB에 있는지 확인
-    function login_btn() {
-        let user_id = $('#uid').val();
-        let user_pw = $('#upw').val();
-
-        if (user_id == "") {
-            alert('아이디를 입력해주세요.')
-            $('#uid').focus();
-            return
+    function onLoginBtnClick() {
+        // [LOGIN] 버튼 - 로그인 화면으로 전환
+        if ($('.login').css('display') == 'none') {
+            $('.form').addClass('animated flipInY');
+            $('.sign-up').hide();
+            $('.login').show();
+            setTimeout(function () {
+                $('.form').removeClass('animated flipInY');
+            }, 1000);
         }
-        else if (user_pw == "") {
-            alert('비밀번호를 입력해주세요.')
-            $('#upw').focus();
-            return
-        }
+        // [LOGIN] 버튼 - 입력된 정보가 DB에 있는지 확인
+        else {
+            let user_id = $('#l-uid').val();
+            let user_pw = $('#l-upw').val();
 
-        $.ajax({
-            type: "POST",
-            url: "/api/login",
-            data: { 'uid_give': user_id, 'upw_give': user_pw },
-            success: function (response) {
-                if (response['result'] == 'success') {
-                    console.log('login success')
-                    $.cookie('mytoken', response['token']);
-                    alert('로그인 완료!')
-                    window.location.href = '/'
-                }
-                else {
-                    alert(response['msg'])
-                }
+            if (user_id == "") {
+                alert('아이디를 입력해주세요.')
+                $('#uid').focus();
+                return
             }
-        });
+            else if (user_pw == "") {
+                alert('비밀번호를 입력해주세요.')
+                $('#upw').focus();
+                return
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "/api/login",
+                data: { 'uid_give': user_id, 'upw_give': user_pw },
+                success: function (response) {
+                    if (response['result'] == 'success') {
+                        console.log('login success')
+                        $.cookie('mytoken', response['token']);
+                        alert('로그인 성공!!')
+                        window.location.href = '/'
+                    }
+                    else {
+                        alert('로그인 실패...')
+                    }
+                }
+            });
+        }
     }
 
-    // [회원가입] 버튼 클릭 시 회원가입 페이지로 이동
-    function member_btn() {
-        window.location.href = '/register'
+    function onSignupBtnClick() {
+        // [SIGN UP] 버튼 - 회원가입 화면으로 전환
+        if ($('.sign-up').css('display') == 'none') {
+            $('.form').addClass('animated flipInY');
+            $('.sign-up').show();
+            $('.login').hide();
+            setTimeout(function () {
+                $('.form').removeClass('animated flipInY');
+            }, 1000);
+        }
+        // [SIUN UP] 버튼 - DB에 회원정보 저장
+        else {
+            let user_id = $('#uid').val();
+            let user_pw = $('#upw').val();
+            let user_name = $('#uname').val();
+
+            if (user_id == "") {
+                alert('아이디를 입력해주세요.')
+                $('#uid').focus();
+                return
+            }
+            else if (user_pw == "") {
+                alert('비밀번호를 입력해주세요.')
+                $('#upw').focus();
+                return
+            }
+            else if (user_name == "") {
+                alert('이름을 입력해주세요.')
+                $('#uname').focus();
+                return
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "/api/register",
+                data: { 'uid_give': user_id, 'upw_give': user_pw, 'uname_give': user_name },
+                success: function (response) {
+                    if (response['result'] == 'success') {
+                        alert('회원가입 성공 / 로그인화면 이동')
+                        onLoginBtnClick()
+                    }
+                    else if (response['result'] == 'fail') {
+                        alert(response['msg'])
+                    }
+                }
+            });
+        }
     }
 
 </script>
 
-<body cellpadding="0" cellspacing="0" marginleft="0" margintop="0" width="100%" height="100%" align="center">
 
-    <div id="login_page" class="card align-middle" style="width:20rem; border-radius:20px;">
-        <div class="card-title" style="margin-top:30px;">
-            <h2 class="card-title text-center" style="color:#113366;">로그인</h2>
+<body>
+
+    <div class="wrapper">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 col-md-offset-3">
+                    <div class="form">
+                        <!-- 회원가입 -->
+                        <div class="input-container sign-up">
+                            <div class="avatar-wrapper">
+                                <img src="../static/image/login_profile.png" class="avatar" />
+                            </div>
+                            <h2>sign up</h2>
+                            <p>Its free and only takes a minute</p>
+                            <input id="uid" type="text" class="form-control" placeholder="ID" required />
+                            <input id="upw" type="password" class="form-control" placeholder="Password" required />
+                            <input id="uname" type="text" class="form-control" placeholder="Username" required
+                                autocomplete="new-password" />
+                        </div>
+                        <!-- 로그인 -->
+                        <div class="input-container login">
+                            <div class="avatar-wrapper">
+                                <img src="../static/image/login_profile.png" class="avatar" />
+                            </div>
+                            <br>
+                            <h2>Login</h2>
+                            <p>Welcome back to jungo</p>
+                            <input id="l-uid" type="text" class="form-control" placeholder="ID" required />
+                            <input id="l-upw" type="password" class="form-control" placeholder="Password" required />
+                        </div>
+                        <!-- 버튼클릭 -->
+                        <div class="button-group">
+                            <button id="btn-login" class="btn login-btn" type="submit"
+                                onclick="onLoginBtnClick()">LOGIN</button>
+                            <button id="btn-member" class="btn signup-btn" type="submit"
+                                onclick="onSignupBtnClick()">SIGN UP</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <form class="form-signin">
-                <h5 class="form-signin-heading">아이디</h5>
-                <input type="text" id="uid" class="form-control" placeholder="Your ID" required><BR>
-                <h5 class="form-signin-heading">비밀번호</h5>
-                <input type="password" id="upw" class="form-control" placeholder="Password" required><br>
-                <!-- <div class="checkbox">
-                    <label>
-                        <input type="checkbox" value="remember-me"> 기억하기
-                    </label>
-                </div> -->
-                <button onclick="login_btn()" id="btn-login" class="btn btn-lg btn-primary btn-block">로그인
-                </button>
-                <button onclick="member_btn()" id="btn-member" class="btn btn-lg btn-block">회원가입
-                </button>
-            </form>
-        </div>
-    </div>
 
 </body>
-
-</html>

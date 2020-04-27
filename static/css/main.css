@@ -15,8 +15,16 @@ body {
     margin: auto;
 }
 
-header {
+/* header {
     margin-top: 40px;
+} */
+
+.lead-one {
+    margin: auto;
+}
+
+.btn-posting-box {
+    margin: auto;
 }
 
 

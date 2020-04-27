@@ -3,6 +3,7 @@ app = Flask(__name__)
 
 from pymongo import MongoClient
 client = MongoClient('localhost', 27017)
+# client = MongoClient('mongodb://test:test@3.14.28.202', 27017)
 db = client.jungo
 
 # 로그인기능(JWT)을 위한 패키지
@@ -37,13 +38,8 @@ def home():
     return render_template('main.html')
 
 @app.route('/login')
-def member_page():
+def login_page():
     return render_template('login.html')
-
-@app.route('/register')
-def main_page():
-    return render_template('register.html')
-
 
 #####################################
 ##     로그인기능을 위한 API       ##
@@ -93,7 +89,7 @@ def login():
         
         return jsonify({'result': 'success', 'token': token})
     else:
-        return jsonify({'result': 'fail', 'msg': '아이디/비밀번호가 일치하지 않습니다'})
+        return jsonify({'result': 'fail'})
 
 
 # [유저 정보 확인 API]
@@ -103,7 +99,7 @@ def api_valid():
     # 로그인에 성공하여 토큰이 있는 유저만 호출할 수 있는 API
     try:
         payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
-        print('payload : ' + payload)
+        print('payload : ' + str(payload))
         user_info = db.user.find_one({'uid': payload['uid']}, {'_id': False})
         print('login success ID : ' + user_info['uname'])
         return jsonify({'result': 'success', 'uname': user_info['uname']})
@@ -118,7 +114,8 @@ def api_valid():
 # 입력받은 키워드로 당근마켓 크롤링
 def dgmk(keyword, uname):
     chrome_path = 'C:/Users/LGPC/Desktop/sparta/Jungo-project/driver/chromedriver_v81/chromedriver_win32/chromedriver'
-
+    # chrome_path = '/usr/bin/chromedriver'
+    
     # chrome 브라우저를 headless(non-gui)로 사용하기위한 옵션설정
     options = Options()
     options.add_argument('--headless')
@@ -263,7 +260,10 @@ def api_filter():
     temp_max = "".join(filter(str.isdigit, max_price_receive))
     temp_min = "".join(filter(str.isdigit, min_price_receive))
 
-    if temp_max == '':
+    if temp_max == '' and temp_min == '':
+        max_price = -1
+        min_price = 0
+    elif temp_max == '':
         max_price = -1
         min_price = int(temp_min)
     elif temp_min == '':
@@ -337,7 +337,10 @@ def api_mail():
     temp_max = "".join(filter(str.isdigit, max_price_receive))
     temp_min = "".join(filter(str.isdigit, min_price_receive))
     
-    if temp_max == '':
+    if temp_max == '' and temp_min == '':
+        max_price = -1
+        min_price = 0
+    elif temp_max == '':
         max_price = -1
         min_price = int(temp_min)
     elif temp_min == '':
@@ -391,6 +394,7 @@ def job(keyword, max_price, min_price, you, uname):
 # you에 보낼메일주소를 넘겨주면 SMTP를 이용하여 메일전송
 def mailsent(you):
     me = 'cyparkdev@naver.com'
+    my_password = 'cksdid123!@'
     # my_password = '메일계정 패스워드'
     msg = MIMEMultipart('alternative')
 

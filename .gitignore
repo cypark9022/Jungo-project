@@ -9,4 +9,8 @@ sample.html
 mail.py
 schedule.py
 test.html
-__pycache__
+__pycache__/
+test-jungo/
+login_bak.html
+register_bak.html
+login_bak.css
