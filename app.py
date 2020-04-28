@@ -41,10 +41,10 @@ def home():
 def login_page():
     return render_template('login.html')
 
+
 #####################################
 ##     로그인기능을 위한 API       ##
 #####################################
-
 # [회원가입 API]
 @app.route('/api/register', methods=['POST'])
 def api_register():
@@ -108,10 +108,8 @@ def api_valid():
 
 
 ##################################
-##     당근마켓 크롤링 API      ##
+##     당근마켓 크롤링 함수     ##
 ##################################
-
-# 입력받은 키워드로 당근마켓 크롤링
 def dgmk(keyword, uname):
     chrome_path = 'C:/Users/LGPC/Desktop/sparta/Jungo-project/driver/chromedriver_v81/chromedriver_win32/chromedriver'
     # chrome_path = '/usr/bin/chromedriver'
@@ -176,10 +174,8 @@ def dgmk(keyword, uname):
 
 
 ##################################
-##     헬로마켓 크롤링 API      ##
+##     헬로마켓 크롤링 함수     ##
 ##################################
-
-# 입력받은 키워드로 헬로마켓 크롤링
 def hlmk(keyword, uname):
     headers = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36'}
     items_uname = 'items_' + uname
@@ -216,10 +212,9 @@ def hlmk(keyword, uname):
         print('ERROR!! Hello-market crawling fail...')
 
 
-####################################
-##      DB데이터 화면에 출력      ##
-####################################
-
+######################################
+##      크롤링 데이터 출력 API      ##
+######################################
 @app.route('/searching', methods=['POST'])
 def make_card():
     keyword = request.form['keyword_give']
@@ -242,10 +237,10 @@ def make_card():
 
     return jsonify({'result': 'success', 'items': items})
 
-################################
-##        필터링 API        ##
-################################
 
+###############################
+##        필터링 API         ##
+###############################
 @app.route('/api/filter', methods=['POST'])
 def api_filter():
     keyword = request.form['keyword_give']
@@ -255,6 +250,10 @@ def api_filter():
     uname = request.form['uname']
     items_uname = 'items_' + uname
     filter_uname = 'filter_' + uname
+
+    # 지역을 전체로 선택하거나 안할경우 값을 'all'로 저장
+    if position_receive == '전체' or position_receive == '-- 지역을 선택하세요 --':
+        position_receive = 'all'
 
     # 최대/최소가격 입력이 없을경우 -1 / 0 저장 (int형 변환)
     temp_max = "".join(filter(str.isdigit, max_price_receive))
@@ -284,7 +283,7 @@ def api_filter():
         price = item['price']
         img = item['img']
         link = item['link']
-        
+
         # 물품의 가격을 int형으로 변환 (가격정보 없으면 pass)
         price_int = "".join(filter(str.isdigit, price))
         if price_int == '':
@@ -292,26 +291,53 @@ def api_filter():
 
         # 최대가격 입력 안했을 경우, 최소가격만 비교하여 저장
         if min_price <= int(price_int) and max_price == -1:
-            doc = {
-                'keyword': keyword,
-                'img': img,
-                'title': title,
-                'position': position,
-                'price': price,
-                'link': link
-            }
-            db[filter_uname].insert_one(doc)
+            # 선택한 지역(도, 시)이 position에 있을경우 저장
+            if position_receive in position:
+                doc = {
+                    'keyword': keyword,
+                    'img': img,
+                    'title': title,
+                    'position': position,
+                    'price': price,
+                    'link': link
+                }
+                db[filter_uname].insert_one(doc)
+            elif position_receive == 'all':
+                doc = {
+                    'keyword': keyword,
+                    'img': img,
+                    'title': title,
+                    'position': position,
+                    'price': price,
+                    'link': link
+                }
+                db[filter_uname].insert_one(doc)
+            else:
+                pass
 
         elif min_price <= int(price_int) and int(price_int) <= max_price:
-            doc = {
-                'keyword': keyword,
-                'img': img,
-                'title': title,
-                'position': position,
-                'price': price,
-                'link': link
-            }
-            db[filter_uname].insert_one(doc)
+            if position_receive in position:
+                doc = {
+                    'keyword': keyword,
+                    'img': img,
+                    'title': title,
+                    'position': position,
+                    'price': price,
+                    'link': link
+                }
+                db[filter_uname].insert_one(doc)
+            elif position_receive == 'all':
+                doc = {
+                    'keyword': keyword,
+                    'img': img,
+                    'title': title,
+                    'position': position,
+                    'price': price,
+                    'link': link
+                }
+                db[filter_uname].insert_one(doc)
+            else:
+                pass
 
     filter_items = list(db[filter_uname].find({'keyword': keyword},{'_id': 0}))
  
@@ -321,7 +347,6 @@ def api_filter():
 ################################
 ##        메일전송 API        ##
 ################################
-
 # 스케쥴링 종료시점을 정하기위한 전역변수 설정
 found_item = False
 
@@ -330,8 +355,13 @@ def api_mail():
     keyword = request.form['keyword_give']
     max_price_receive = request.form['max_price_give']
     min_price_receive = request.form['min_price_give']
+    position_receive = request.form['position_give']
     you = request.form['you_give']
     uname = request.form['uname']
+
+    # 지역을 전체로 선택하거나 안할경우 값을 'all'로 저장
+    if position_receive == '전체' or position_receive == '-- 지역을 선택하세요 --':
+        position_receive = 'all'
 
     # 최대/최소가격 입력이 없을경우 -1 / 0 저장 (int형 변환)
     temp_max = "".join(filter(str.isdigit, max_price_receive))
@@ -353,38 +383,109 @@ def api_mail():
     global found_item
     found_item = False
     
-    run(keyword, max_price, min_price, you, uname)
+    run(keyword, max_price, min_price, you, uname, position_receive)
+
+    if found_item == True:
+        return jsonify({'result': 'success'})
+    else:
+        return jsonify({'result': 'stop'})
 
 # 스케쥴링 실행 (run)
-def run(keyword, max_price, min_price, you, uname):
+def run(keyword, max_price, min_price, you, uname, position_receive):
     sched = BackgroundScheduler()
     sched.start()
 
-    sched.add_job(job, 'interval', seconds=30, id="test1", args=[keyword, max_price, min_price, you, uname])
+    sched.add_job(job, 'interval', seconds=180, id=uname, args=[keyword, max_price, min_price, you, uname, position_receive])
     global found_item
 
     while True:
         print('Running schedule process!!')
-        time.sleep(10)
+        time.sleep(30)
         if found_item == True:
-            sched.remove_job("test1")
+            sched.remove_job(uname)
             print('스케쥴링을 종료합니다.')
-            return False
+            break
 
 # 스케쥴링되어 동작 (job)
-def job(keyword, max_price, min_price, you, uname):
+def job(keyword, max_price, min_price, you, uname, position_receive):
     # 로그인ID 각각의 컬렉션을 사용 (기존에 검색한 DB데이터 삭제)
     items_uname = 'items_' + uname
-    db[items_uname].remove({'keyword': keyword})
+    filter_uname = 'filter_' + uname
     
     # 당근마켓, 헬로마켓 크롤링
+    db[items_uname].remove({'keyword': keyword})
     dgmk(keyword, uname)
     hlmk(keyword, uname)
 
+    # 필터링된 데이터를 DB에 저장
+    db[filter_uname].remove({'keyword': keyword})
     items = list(db[items_uname].find({'keyword': keyword},{'_id': 0}))
+
+    for item in items:
+        keyword = item['keyword']
+        title = item['title']
+        position = item['position']
+        price = item['price']
+        img = item['img']
+        link = item['link']
+        
+        # 물품의 가격을 int형으로 변환 (가격정보 없으면 pass)
+        price_int = "".join(filter(str.isdigit, price))
+        if price_int == '':
+            continue
+
+        # 최대가격 입력 안했을 경우, 최소가격만 비교하여 저장
+        if min_price <= int(price_int) and max_price == -1:
+            if position_receive in position:
+                doc = {
+                    'keyword': keyword,
+                    'img': img,
+                    'title': title,
+                    'position': position,
+                    'price': price,
+                    'link': link
+                }
+                db[filter_uname].insert_one(doc)
+            elif position_receive == 'all':
+                doc = {
+                    'keyword': keyword,
+                    'img': img,
+                    'title': title,
+                    'position': position,
+                    'price': price,
+                    'link': link
+                }
+                db[filter_uname].insert_one(doc)
+            else:
+                pass
+        elif min_price <= int(price_int) and int(price_int) <= max_price:
+            if position_receive in position:
+                doc = {
+                    'keyword': keyword,
+                    'img': img,
+                    'title': title,
+                    'position': position,
+                    'price': price,
+                    'link': link
+                }
+                db[filter_uname].insert_one(doc)
+            elif position_receive == 'all':
+                doc = {
+                    'keyword': keyword,
+                    'img': img,
+                    'title': title,
+                    'position': position,
+                    'price': price,
+                    'link': link
+                }
+                db[filter_uname].insert_one(doc)
+            else:
+                pass
+
+    filter_items = list(db[filter_uname].find({'keyword': keyword},{'_id': 0}))
     global found_item
 
-    if not items:
+    if not filter_items:
         print('데이터가 없어 스케쥴링이 계속 실행됩니다.')
     else:
         print('데이터가 있어 메일을 전송하고 스케쥴링을 멈춥니다.')
@@ -394,7 +495,6 @@ def job(keyword, max_price, min_price, you, uname):
 # you에 보낼메일주소를 넘겨주면 SMTP를 이용하여 메일전송
 def mailsent(you):
     me = 'cyparkdev@naver.com'
-    my_password = 'cksdid123!@'
     # my_password = '메일계정 패스워드'
     msg = MIMEMultipart('alternative')
 
@@ -423,9 +523,24 @@ def mailsent(you):
 
 
 #################################
+##      메일예약 취소 API      ##
+#################################
+@app.route('/api/mail/cancel', methods=['POST'])
+def mail_cancel():
+    uname = request.form['uname']
+    sched = BackgroundScheduler()
+    
+    try:
+        sched.start()
+        sched.remove_job(uname)
+        return jsonify({'result': 'success'})
+    except:
+        return jsonify({'result': 'fail'})
+
+
+#################################
 ##       유저별 최근검색       ##
 #################################
-
 @app.route('/final/search', methods=['POST'])
 def final_search():
     uname = request.form['uname']
@@ -441,6 +556,7 @@ def final_search():
     except:
         print('검색기록이 없습니다.')
         return jsonify({'result': 'fail'})
+
 
 # API 서버 실행 (url, Port)
 if __name__ == '__main__':

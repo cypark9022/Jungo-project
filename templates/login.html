@@ -120,6 +120,19 @@
         }
     }
 
+    // 정보 입력 후 [Enter] Key
+    function enterkey_login() {
+        if (window.event.keyCode == 13) {
+            onLoginBtnClick();
+        }
+    }
+
+    function enterkey_signup() {
+        if (window.event.keyCode == 13) {
+            onSignupBtnClick();
+        }
+    }
+
 </script>
 
 
@@ -137,10 +150,11 @@
                             </div>
                             <h2>sign up</h2>
                             <p>Its free and only takes a minute</p>
-                            <input id="uid" type="text" class="form-control" placeholder="ID" required />
-                            <input id="upw" type="password" class="form-control" placeholder="Password" required />
-                            <input id="uname" type="text" class="form-control" placeholder="Username" required
-                                autocomplete="new-password" />
+                            <input id="uid" onkeydown="enterkey_signup()" type="text" class="form-control" placeholder="ID" required
+                                autocomplete="off" />
+                            <input id="upw" onkeydown="enterkey_signup()" type="password" class="form-control" placeholder="Password" required />
+                            <input id="uname" onkeydown="enterkey_signup()" type="text" class="form-control" placeholder="Username" required
+                                autocomplete="off" />
                         </div>
                         <!-- 로그인 -->
                         <div class="input-container login">
@@ -150,8 +164,8 @@
                             <br>
                             <h2>Login</h2>
                             <p>Welcome back to jungo</p>
-                            <input id="l-uid" type="text" class="form-control" placeholder="ID" required />
-                            <input id="l-upw" type="password" class="form-control" placeholder="Password" required />
+                            <input id="l-uid" onkeydown="enterkey_login()" type="text" class="form-control" placeholder="ID" required />
+                            <input id="l-upw" onkeydown="enterkey_login()" type="password" class="form-control" placeholder="Password" required />
                         </div>
                         <!-- 버튼클릭 -->
                         <div class="button-group">
